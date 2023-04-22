@@ -17,15 +17,12 @@ constexpr int32 BrickCountY = 14;
 constexpr int32 exBrickCountY = 1;
 
 
-Array<Rect> MakeBricks()
-{
+Array<Rect> MakeBricks() {
 	// ブロックの配列（1 つのブロックを Rect で表現）
 	Array<Rect> bricks;
 
-	for (int32 y = 0; y < BrickCountY; ++y)
-	{
-		for (int32 x = 0; x < BrickCountX; ++x)
-		{
+	for (int32 y = 0; y < BrickCountY; ++y) {
+		for (int32 x = 0; x < BrickCountX; ++x) {
 			// ブロックの左上の X 座標
 			const int32 posX = (x * BrickSize.x + BrickStartPosition.x);
 
@@ -40,15 +37,12 @@ Array<Rect> MakeBricks()
 	return bricks;
 }
 
-Array<Rect> exMakeBricks()
-{
+Array<Rect> exMakeBricks() {
 	// ブロックの配列（1 つのブロックを Rect で表現）
 	Array<Rect> exbricks;
 
-	for (int32 y = 0; y < exBrickCountY; ++y)
-	{
-		for (int32 x = 0; x < BrickCountX; ++x)
-		{
+	for (int32 y = 0; y < exBrickCountY; ++y) {
+		for (int32 x = 0; x < BrickCountX; ++x) {
 			// ブロックの左上の X 座標
 			const int32 posX = (x * BrickSize.x + exBrickStartPosition.x);
 
@@ -63,8 +57,7 @@ Array<Rect> exMakeBricks()
 	return exbricks;
 }
 
-void Main()
-{
+void Main() {
 	Scene::SetBackground(Palette::Gray);
 	// ブロックのサイズ
 	constexpr Size brickSize{ 40, 20 };
@@ -73,9 +66,10 @@ void Main()
 	double speed = 0.0;
 	// ボール
 	Circle ball{ 400, 320, 8 };
-
+	//失敗判定用
 	Rect Out{ 0, 790, 800, 10 };
 
+	//大量のboolたち
 	bool hard = true;
 	bool end = false;
 	bool clear = false;
@@ -94,11 +88,12 @@ void Main()
 	double t = 200.0;
 	double h = 550.0;
 	
-
+	//フォント作成
 	const Font fontBold{ 128, Typeface::Bold };
 	const Font fontMedium{ 32 , Typeface::Medium };
 	const Font fontRegular{ 24 , Typeface::Regular };
 
+	//オーディオ作成
 	const Audio breaker{ U"audio/石が砕ける.mp3" };
 	const Audio exbreaker{ U"audio/決定ボタンを押す20.mp3" };
 	const Audio bounce{ U"audio/カーソル移動5.mp3" };
@@ -110,18 +105,22 @@ void Main()
 	Array<Rect> bricks = MakeBricks();
 	Array<Rect> exbricks = exMakeBricks();
 
-	while (System::Update())
-	{
+	while (System::Update()) {
 		Cursor::RequestStyle(CursorStyle::Hidden);
 
-		
-		if (t >= 12.0) t -= Scene::DeltaTime() / 2 * hardmode;
+		//パドル縮小
+		if (t >= 12.0) {
+			t -= Scene::DeltaTime() / 2 * hardmode;
+		}
 
+		//ゲーム中のみ
 		if (!end && !clear && start) {
+			//アクセル
 			if (KeySpace.pressed()) {
 				accel = 2;
 			}
 
+			//アクセル解除
 			if (KeySpace.up()) {
 				accel = 1;
 			}
@@ -135,7 +134,7 @@ void Main()
 			}
 		}
 
-
+		//移動制限
 		if (move > 800.0) {
 			move = 800.0;
 		}
@@ -150,12 +149,10 @@ void Main()
 		// ボールを移動
 		ball.moveBy(ballVelocity * Scene::DeltaTime());
 
-		// ブロックを順にチェック
-		for (auto it = bricks.begin(); it != bricks.end(); ++it)
-		{
+		// 通常ブロックを順にチェック
+		for (auto it = bricks.begin(); it != bricks.end(); ++it) {
 			// ブロックとボールが交差していたら
-			if (it->intersects(ball))
-			{
+			if (it->intersects(ball)) {
 				breaker.playOneShot();
 				score++;
 				// ボールの向きを反転する
@@ -170,11 +167,10 @@ void Main()
 			}
 		}
 
-		for (auto it = exbricks.begin(); it != exbricks.end(); ++it)
-		{
+		//エクストラブロック確認
+		for (auto it = exbricks.begin(); it != exbricks.end(); ++it) {
 			// ブロックとボールが交差していたら
-			if (it->intersects(ball))
-			{
+			if (it->intersects(ball)) {
 				exbreaker.playOneShot();
 				h -= 12.5;
 				score++;
@@ -191,34 +187,31 @@ void Main()
 		}
 
 		// 天井にぶつかったらはね返る
-		if (ball.y < 0 && ballVelocity.y < 0)
-		{
+		if (ball.y < 0 && ballVelocity.y < 0) {
 			ballVelocity.y *= -1;
 		}
 
 		// 左右の壁にぶつかったらはね返る
 		if ((ball.x < 0 && ballVelocity.x < 0)
-			|| (Scene::Width() < ball.x && 0 < ballVelocity.x))
-		{
+			|| (Scene::Width() < ball.x && 0 < ballVelocity.x)) {
 			ballVelocity.x *= -1;
 		}
 
 		// パドルにあたったらはね返る
-		if (0 < ballVelocity.y && paddle.intersects(ball))
-		{
+		if (0 < ballVelocity.y && paddle.intersects(ball)) {
 			hard = false;
 			bounce.playOneShot();
 			// パドルの中心からの距離に応じてはね返る方向を変える
 			ballVelocity = Vec2{ (ball.x - paddle.center().x) * 7.5, -ballVelocity.y }.setLength(speed * hardmode);
 		}
 
-		for (const auto& brick : bricks)
-		{
+		//通常ブロック描写
+		for (const auto& brick : bricks) {
 			brick.stretched(-2).draw(Palette::Red).drawFrame(0, 2, Palette::Black);
 		}
 
-		for (const auto& exbrick : exbricks)
-		{
+		//エクストラブロック描写
+		for (const auto& exbrick : exbricks) {
 			exbrick.stretched(-2).draw(Palette::Blue).drawFrame(0, 2, Palette::Black);
 		}
 
@@ -229,6 +222,7 @@ void Main()
 		paddle.rounded(3).draw(Palette::Greenyellow);
 
 		if (score == 300) {
+			//成功処理
 			clear = true;
 			t += Scene::DeltaTime() / 2 * hardmode;
 			if (congset) {
@@ -240,6 +234,7 @@ void Main()
 			
 		}
 		else if (Out.intersects(ball)) {
+			//失敗処理
 			end = true;
 			t += Scene::DeltaTime() / 2 * hardmode;
 			miss.play();
@@ -248,12 +243,13 @@ void Main()
 		}
 
 		if (end) {
+			//失敗画面
 			t += Scene::DeltaTime() / 2;
 			
 			fontBold(U"GAME OVER").drawAt(Scene::Center(), Palette::Skyblue);
 			fontMedium(U"スペースキーでリトライ").draw(Arg::center(400, 450));
-			if (KeySpace.down())
-			{
+			//リセット
+			if (KeySpace.down()) {
 				bricks = MakeBricks();
 				exbricks = exMakeBricks();
 
@@ -270,9 +266,10 @@ void Main()
 			}
 		}
 		if (clear) {
-			
+			//成功画面
 			fontBold(U"CLEAR!").drawAt(Scene::Center(), Palette::Skyblue);
 			fontMedium(U"スペースキーでリトライ").draw(Arg::center(400, 450));
+			//リセット
 			if (KeySpace.down())
 			{
 
@@ -292,6 +289,7 @@ void Main()
 			}
 		}
 
+		//ハードモード
 		if (hard) {
 			if (KeyH.pressed()) {
 				hardmode = 1.5;
@@ -301,10 +299,12 @@ void Main()
 
 		fontMedium(U"Score {}"_fmt(score)).draw(10, 555);
 
+		//スタート画面
 		if (!start) {
 			fontBold(U"ブロック崩し").drawAt(Scene::Center(), Palette::Skyblue);
 			fontMedium(U"スペースキーでスタート").draw(Arg::center(400, 400));
 			fontRegular(U"操作方法\n矢印キーで左右に移動\nスペースキーでパドル加速").draw(Arg::center(400, 475));
+			//スペースキーでスタート
 			if (KeySpace.down()) {
 				start = true;
 				t += Scene::DeltaTime() / 2 * hardmode;
